@@ -29,7 +29,7 @@ import ipywidgets
 from librosa import display as librosa_display
 import matplotlib.pyplot as plt
 import numpy as np
-
+import math
 
 @functools.cache
 def get_melspec_layer(sample_rate: int, root=4.0):
@@ -203,19 +203,31 @@ def display_paged_results(
   )
 
   def display_page(page_state):
-    clear_output()
-    num_pages = len(all_results.search_results) // samples_per_page
+    clear_output(wait=True) #Clear current output to refresh the display
+      
+    # Calculate the exact number of pages
+    num_pages = math.ceil(len(all_results.search_results)/samples_per_page)
     page = page_state.curr_page
-    print(f'Results Page: {page} / {num_pages}')
-    st, end = page * samples_per_page, (page + 1) * samples_per_page
+      
+    # Determine the slice of results to display on the current page
+    st = page * samples_per_page
+    end = st + samples_per_page
     results_page = search.TopKSearchResults(
         top_k=samples_per_page,
         search_results=all_results.search_results[st:end],
     )
+      
+    # Display the search results for the current page
     display_search_results(
-        results=results_page, rank_offset=page * samples_per_page, **kwargs
+        results=results_page,
+        rank_offset=page * samples_per_page, 
+        **kwargs
     )
-    print(f'Results Page: {page} / {num_pages}')
+    print(f'Results Page: {page + 1 } / {num_pages}')
+
+    # Update and display navigation buttons 
+    next_page_button.disabled = (page >= num_pages - 1)
+    prev_page_button.disabled = (page <= 0)
     ipy_display(prev_page_button)
     ipy_display(next_page_button)
 
